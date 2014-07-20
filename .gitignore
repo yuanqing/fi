@@ -1,0 +1,7 @@
+.DS_Store
+/report
+/sandbox.php
+/vendor
+composer.lock
+composer.phar
+phpunit.xml
