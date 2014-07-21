@@ -15,17 +15,13 @@ class FileIterator extends \FilterIterator
   private $filterCallbacks;
 
   /**
-   * @param string|ArrayIterator $dataDir The file path to the directory containing the
+   * @param \Iterator $dataDir The file path to the directory containing the
    * data files, or an ArrayIterator over the data files
    * @param FileParser $fileParser
    */
-  public function __construct($dataDir, FileParser $fileParser)
+  public function __construct(\Iterator $iterator, FileParser $fileParser)
   {
-    if ($dataDir instanceof \ArrayIterator) {
-      parent::__construct($dataDir);
-    } else {
-      parent::__construct(new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($dataDir, \FilesystemIterator::KEY_AS_PATHNAME | \FilesystemIterator::CURRENT_AS_FILEINFO | \FilesystemIterator::SKIP_DOTS)));
-    }
+    parent::__construct($iterator);
     $this->fileParser = $fileParser;
     $this->filterCallbacks = array();
   }
@@ -43,14 +39,10 @@ class FileIterator extends \FilterIterator
   /**
    * Filters this iterator on-the-fly (ie. while iterating) using all the callbacks in the
    * {$callbacks} array
-   *
    */
   public function accept()
   {
-    $filePath = parent::current()->getPathname();
-    if ($this->fileParser->parseFilePath($filePath) === null) {
-      return false;
-    }
+    $filePath = parent::current();
     foreach ($this->filterCallbacks as $callback) {
       if (call_user_func($callback, $this->fileParser->parse($filePath)) === false) {
         return false;
@@ -67,13 +59,13 @@ class FileIterator extends \FilterIterator
    */
   public function sort($callback)
   {
-    $arr = iterator_to_array($this, true);
-    $fileParser = $this->fileParser;
-    uasort($arr, function($f1, $f2) use ($callback, $fileParser) {
+    $arr = iterator_to_array($this, false);
+    $fileParser = $this->fileParser; # can't use $this inside the callback in PHP 5.3 :|
+    uasort($arr, function($filePath1, $filePath2) use ($callback, $fileParser) {
       return call_user_func(
         $callback,
-        $fileParser->parse($f1->getPathname()),
-        $fileParser->parse($f2->getPathname())
+        $fileParser->parse($filePath1),
+        $fileParser->parse($filePath2)
       );
     });
     return new $this(new \ArrayIterator($arr), $this->fileParser);

@@ -25,7 +25,7 @@ class FilePathParser
    *
    * @param string $filePath The file path to extract values from
    * @return null|array An array of values if the $filePath matches $this->filePathFormat,
-   *   else returns null
+   * else returns null
    */
   public function parse($filePath)
   {

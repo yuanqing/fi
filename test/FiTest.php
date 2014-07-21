@@ -7,7 +7,6 @@
  * @link http://github.com/yuanqing/X.php
  */
 
-use org\bovigo\vfs\vfsStream;
 use yuanqing\Fi\Fi;
 use yuanqing\Fi\Document;
 
@@ -37,11 +36,6 @@ class FiTest extends PHPUnit_Framework_TestCase
       $this->assertTrue(is_int($index));
       $this->assertTrue($document instanceof Document);
     }
-  }
-
-  private function assertDocumentEquals(Document $document, $filePath, $fields, $content)
-  {
-
   }
 
   public function testNoMatch()

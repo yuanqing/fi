@@ -68,7 +68,7 @@ class Document
 
   public function setContent($content)
   {
-    return $this->content = $content;
+    $this->content = $content;
     return $this;
   }
 
