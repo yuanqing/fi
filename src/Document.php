@@ -27,11 +27,6 @@ class Document
     return $this->filePath;
   }
 
-  public function hasFields()
-  {
-    return !empty($this->fields);
-  }
-
   public function getFields()
   {
     return $this->fields;

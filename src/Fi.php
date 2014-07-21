@@ -130,7 +130,7 @@ class Fi implements \Iterator
   private function sortByFieldName($fieldName, $sortOrder = Fi::ASC)
   {
     if ($sortOrder !== Fi::ASC && $sortOrder !== Fi::DESC) {
-      throw new \InvalidArgumentException('Invalid sort order: %s', $sortOrder);
+      throw new \InvalidArgumentException(sprintf('Invalid sort order: %s', $sortOrder));
     }
     $this->sortCallbacks[] = function($filePath1, $filePath2) use ($fieldName, $sortOrder) {
       $val1 = $filePath1->getField($fieldName);

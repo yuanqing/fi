@@ -1,4 +1,0 @@
----
-title: Baz
----
-baz
