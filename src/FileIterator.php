@@ -68,11 +68,12 @@ class FileIterator extends \FilterIterator
   public function sort($callback)
   {
     $arr = iterator_to_array($this, true);
-    uasort($arr, function($f1, $f2) use ($callback) {
+    $fileParser = $this->fileParser;
+    uasort($arr, function($f1, $f2) use ($callback, $fileParser) {
       return call_user_func(
         $callback,
-        $this->fileParser->parse($f1->getPathname()),
-        $this->fileParser->parse($f2->getPathname())
+        $fileParser->parse($f1->getPathname()),
+        $fileParser->parse($f2->getPathname())
       );
     });
     return new $this(new \ArrayIterator($arr), $this->fileParser);

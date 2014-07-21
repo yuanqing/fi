@@ -29,13 +29,19 @@ class FiTest extends PHPUnit_Framework_TestCase
     $fi = new Fi('test/data', '{{ order: d }} - {{ title: s }}.md');
     $this->assertTrue($fi instanceof \Iterator);
 
-    $docs = $fi->get();
-    $this->assertTrue(is_array($docs));
-    $this->assertTrue(count($docs) === 3);
-    foreach ($docs as $index => $doc) {
+    $documents = $fi->get();
+    $this->assertTrue(is_array($documents));
+    $this->assertTrue(count($documents) === 3);
+    $this->assertFieldEquals($documents, 'title', array('Foo', 'Bar', 'Baz'));
+    foreach ($documents as $index => $document) {
       $this->assertTrue(is_int($index));
-      $this->assertTrue($doc instanceof Document);
+      $this->assertTrue($document instanceof Document);
     }
+  }
+
+  private function assertDocumentEquals(Document $document, $filePath, $fields, $content)
+  {
+
   }
 
   public function testNoMatch()
@@ -49,22 +55,25 @@ class FiTest extends PHPUnit_Framework_TestCase
   {
     $fi = new Fi('test/data', '{{ order: d }} - {{ title: s }}.md');
 
-    $fi->filter(function($doc) {
-      return $doc->getField('title') !== 'Foo';
+    $documents = $fi->get();
+    $this->assertFieldEquals($documents, 'title', array('Foo', 'Bar', 'Baz'));
+
+    $fi->filter(function($document) {
+      return $document->getField('title') !== 'Foo';
     });
-    $docs = $fi->get();
-    $this->assertFieldEquals($docs, 'title', array('Bar', 'Baz'));
+    $documents = $fi->get();
+    $this->assertFieldEquals($documents, 'title', array('Bar', 'Baz'));
   }
 
   public function testMap()
   {
     $fi = new Fi('test/data', '{{ order: d }} - {{ title: s }}.md');
 
-    $fi->map(function($doc) {
-      return $doc->setField('title', 'Qux');
+    $fi->map(function($document) {
+      return $document->setField('title', 'Qux');
     });
-    $docs = $fi->get();
-    $this->assertFieldEquals($docs, 'title', array('Qux', 'Qux', 'Qux'));
+    $documents = $fi->get();
+    $this->assertFieldEquals($documents, 'title', array('Qux', 'Qux', 'Qux'));
   }
 
   public function testSortUsingCallback()
@@ -72,11 +81,11 @@ class FiTest extends PHPUnit_Framework_TestCase
     $fi = new Fi('test/data', '{{ order: d }} - {{ title: s }}.md');
 
     # 'title' field, ascending
-    $fi->sort(function($doc1, $doc2) {
-      return strnatcmp($doc1->getField('title'), $doc2->getField('title'));
+    $fi->sort(function($document1, $document2) {
+      return strnatcmp($document1->getField('title'), $document2->getField('title'));
     });
-    $docs = $fi->get();
-    $this->assertFieldEquals($docs, 'title', array('Bar', 'Baz', 'Foo'));
+    $documents = $fi->get();
+    $this->assertFieldEquals($documents, 'title', array('Bar', 'Baz', 'Foo'));
   }
 
   public function testSortByFieldNameNumeric()
@@ -84,12 +93,12 @@ class FiTest extends PHPUnit_Framework_TestCase
     $fi = new Fi('test/data', '{{ order: d }} - {{ title: s }}.md');
 
     # 'order' field, descending
-    $docs = $fi->sort('order', Fi::DESC)->get();
-    $this->assertFieldEquals($docs, 'order', array(2, 1, 0));
+    $documents = $fi->sort('order', Fi::DESC)->get();
+    $this->assertFieldEquals($documents, 'order', array(2, 1, 0));
 
     # 'order' field, ascending
-    $docs = $fi->sort('order', Fi::ASC)->get();
-    $this->assertFieldEquals($docs, 'order', array(0, 1, 2));
+    $documents = $fi->sort('order', Fi::ASC)->get();
+    $this->assertFieldEquals($documents, 'order', array(0, 1, 2));
   }
 
   public function testSortByFieldNameString()
@@ -97,19 +106,19 @@ class FiTest extends PHPUnit_Framework_TestCase
     $fi = new Fi('test/data', '{{ order: d }} - {{ title: s }}.md');
 
     # 'title' field, descending
-    $docs = $fi->sort('title', Fi::DESC)->get();
-    $this->assertFieldEquals($docs, 'title', array('Foo', 'Baz', 'Bar'));
+    $documents = $fi->sort('title', Fi::DESC)->get();
+    $this->assertFieldEquals($documents, 'title', array('Foo', 'Baz', 'Bar'));
 
     # 'title' field, ascending
-    $docs = $fi->sort('title', Fi::ASC)->get();
-    $this->assertFieldEquals($docs, 'title', array('Bar', 'Baz', 'Foo'));
+    $documents = $fi->sort('title', Fi::ASC)->get();
+    $this->assertFieldEquals($documents, 'title', array('Bar', 'Baz', 'Foo'));
   }
 
-  private function assertFieldEquals($docs, $fieldName, $fieldValues)
+  private function assertFieldEquals($documents, $fieldName, $fieldValues)
   {
-    $this->assertTrue(count($docs) === count($fieldValues));
-    foreach ($docs as $i => $doc) {
-      $this->assertSame($doc->getField($fieldName), $fieldValues[$i]);
+    $this->assertTrue(count($documents) === count($fieldValues));
+    foreach ($documents as $i => $document) {
+      $this->assertSame($document->getField($fieldName), $fieldValues[$i]);
     }
   }
 
