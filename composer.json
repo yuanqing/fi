@@ -18,5 +18,8 @@
   "require": {
     "symfony/yaml": "~2.5",
     "yuanqing/extract": "~0.1"
+  },
+  "require-dev": {
+    "mikey179/vfsStream": "~1.2"
   }
 }

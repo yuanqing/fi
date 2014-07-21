@@ -12,15 +12,13 @@ namespace yuanqing\Fi;
 class Document
 {
   private $filePath;
-  private $filePathMeta;
-  private $frontMatter;
+  private $fields;
   private $content;
 
-  public function __construct($filePath, $filePathMeta = array(), $frontMatter = array(), $content = '')
+  public function __construct($filePath, array $fields, $content)
   {
     $this->filePath = $filePath;
-    $this->filePathMeta = $filePathMeta;
-    $this->frontMatter = $frontMatter;
+    $this->fields = $fields;
     $this->content = $content;
   }
 
@@ -29,28 +27,33 @@ class Document
     return $this->filePath;
   }
 
-  public function getFilePathMeta($fieldName)
+  public function hasFields()
   {
-    if ($fieldName === null) {
-      return $this->filePathMeta;
-    }
-    return @$this->filePathMeta[$fieldName];
+    return !empty($this->fields);
   }
 
-  public function hasFrontMatter($fieldName = null)
+  public function getFields()
   {
-    if ($fieldName === null) {
-      return !empty($this->frontMatter);
-    }
-    return isset($this->frontMatter[$fieldName]);
+    return $this->fields;
   }
 
-  public function getFrontMatter($fieldName)
+  public function hasField($fieldName)
   {
-    if ($fieldName === null) {
-      return $this->frontMatter;
+    return isset($this->fields[$fieldName]);
+  }
+
+  public function getField($fieldName)
+  {
+    if (!$this->hasField($fieldName)) {
+      throw new \InvalidArgumentException(sprintf('Invalid field name \'%s\'', $fieldName));
     }
-    return @$this->frontMatter[$fieldName];
+    return $this->fields[$fieldName];
+  }
+
+  public function setField($fieldName, $fieldValue)
+  {
+    $this->fields[$fieldName] = $fieldValue;
+    return $this;
   }
 
   public function hasContent()
@@ -61,6 +64,12 @@ class Document
   public function getContent()
   {
     return $this->content;
+  }
+
+  public function setContent($content)
+  {
+    return $this->content = $content;
+    return $this;
   }
 
 }

@@ -16,6 +16,7 @@ class Fi implements \Iterator
 
   private $fileParser;
   private $fileIterator;
+  private $mapCallbacks;
   private $sortCallbacks;
 
   /**
@@ -26,12 +27,12 @@ class Fi implements \Iterator
   {
     # check $dataDir
     if (!is_dir($dataDir) || !is_readable($dataDir)) {
-      throw new \InvalidArgumentException(sprintf('Invalid data directory: %s', $dataDir));
+      throw new \InvalidArgumentException(sprintf('Invalid data directory: \'%s\'', $dataDir));
     }
 
     # normalise $args
     $dataDir = rtrim($dataDir, '/');
-    $filePathFormat = $dataDir . '/' . $filePathFormat;
+    $filePathFormat = $dataDir . '/' . ltrim($filePathFormat, '/');
 
     # dependencies
     $yamlParser = new YAMLParser;
@@ -39,13 +40,24 @@ class Fi implements \Iterator
 
     $this->fileParser = new FileParser($yamlParser, $filePathParser);
     $this->fileIterator = new FileIterator($dataDir, $this->fileParser);
+    $this->mapCallbacks = array();
     $this->sortCallbacks = array();
+  }
+
+  /**
+   * Returns all files in {$fileIterator} into as an array of Document objects
+   *
+   * @return array
+   */
+  public function get()
+  {
+    return iterator_to_array($this, false);
   }
 
   /**
    * Adds a callback for filtering the {$fileIterator}
    *
-   * @param callable $callback
+   * @param callable $callback Takes a single argument of type Document. The callback must return * false to exclude the Document from the iterator
    * @throws InvalidArgumentException
    */
   public function filter($callback)
@@ -61,7 +73,7 @@ class Fi implements \Iterator
   /**
    * Adds a callback that is applied to every element in {$fileIterator}
    *
-   * @param callable $callback
+   * @param callable $callback Takes a single argument of type Document. The callback must return * an object of type Document
    * @throws InvalidArgumentException
    */
   public function map($callback)
@@ -69,7 +81,7 @@ class Fi implements \Iterator
     if (!is_callable($callback)) {
       throw new \InvalidArgumentException('Map callback must be callable');
     }
-    $this->fileIterator->map($callback);
+    $this->mapCallbacks[] = $callback;
 
     return $this;
   }
@@ -81,14 +93,15 @@ class Fi implements \Iterator
   public function sort()
   {
     $args = func_get_args();
-    if (count($args) == 1) {
+    if (func_num_args() == 1) {
       return call_user_func_array(array($this, 'sortUsingCallback'), $args);
     }
     return call_user_func_array(array($this, 'sortByFieldName'), $args);
   }
 
   /**
-   * @param callable $callback The callback for sorting the {$fileIterator}
+   * @param callable $callback Takes two arguments of type Document. The callback must return < 0
+   * if the first Document argument is to be ordered before the second, else it must return > 0
    * @throws InvalidArgumentException
    */
   private function sortUsingCallback($callback)
@@ -96,13 +109,13 @@ class Fi implements \Iterator
     if (!is_callable($callback)) {
       throw new \InvalidArgumentException('Sort callback must be callable');
     }
-    $this->sortCallbacks[] = $fieldName;
+    $this->sortCallbacks[] = $callback;
 
     return $this;
   }
 
   /**
-   * @param string $fieldName The name of the field with which to sort the {$fileIterator} by
+   * @param string $fieldName The name of the field by which to sort the {$fileIterator}
    * @param int $sortOrder The order with which to sort the {$fileIterator}
    * @throws InvalidArgumentException
    */
@@ -112,8 +125,13 @@ class Fi implements \Iterator
       throw new \InvalidArgumentException('Invalid sort order: %s', $sortOrder);
     }
     $this->sortCallbacks[] = function($file1, $file2) use ($fieldName, $sortOrder) {
-      $val1 = strtolower($file1->getFrontMatter($fieldName));
-      $val2 = strtolower($file2->getFrontMatter($fieldName));
+      $val1 = $file1->getField($fieldName);
+      $val2 = $file2->getField($fieldName);
+      if (is_numeric($val1) && is_numeric($val2)) {
+        return $sortOrder == Fi::ASC ? $val1 > $val2 : $val2 > $val1;
+      }
+      $val1 = strtolower($val1);
+      $val2 = strtolower($val2);
       return $sortOrder == Fi::ASC ? strnatcmp($val1, $val2) : strnatcmp($val2, $val1);
     };
 
@@ -127,10 +145,12 @@ class Fi implements \Iterator
    */
   public function rewind()
   {
+    # sort using all the {$sortCallbacks}
     foreach ($this->sortCallbacks as $sortCallback) {
       $this->fileIterator = $this->fileIterator->sort($sortCallback);
     }
     $this->sortCallbacks = array(); # empty the {$sortCallbacks} array
+
     $this->fileIterator->rewind();
   }
 
@@ -142,7 +162,14 @@ class Fi implements \Iterator
   public function current()
   {
     $filePath = $this->fileIterator->current()->getPathname();
-    return $this->fileParser->parse($filePath);
+    $document = $this->fileParser->parse($filePath);
+
+    # pass the $document through all the {$mapCallbacks}
+    foreach ($this->mapCallbacks as $callback) {
+      $document = call_user_func($callback, $document);
+    }
+
+    return $document;
   }
 
   public function key()

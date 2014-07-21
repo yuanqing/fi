@@ -24,7 +24,7 @@ class FileIterator extends \FilterIterator
     if ($dataDir instanceof \ArrayIterator) {
       parent::__construct($dataDir);
     } else {
-      parent::__construct(new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($dataDir)));
+      parent::__construct(new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($dataDir, \FilesystemIterator::KEY_AS_PATHNAME | \FilesystemIterator::CURRENT_AS_FILEINFO | \FilesystemIterator::SKIP_DOTS)));
     }
     $this->fileParser = $fileParser;
     $this->filterCallbacks = array();
@@ -38,16 +38,6 @@ class FileIterator extends \FilterIterator
   public function filter($callback)
   {
     $this->filterCallbacks[] = $callback;
-  }
-
-  /**
-   * Adds a callback that is applied to every element in this iterator
-   *
-   * @param callable $callback Takes a single argument of type Document. The callback must return * an object of type Document
-   */
-  public function map($callback)
-  {
-    $this->mapCallbacks[] = $callback;
   }
 
   /**

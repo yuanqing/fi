@@ -11,12 +11,12 @@ namespace yuanqing\Fi;
 
 class FileParser
 {
-  private $yamlParser;
+  private $frontMatterParser;
   private $filePathParser;
 
-  public function __construct(YAMLParser $yamlParser, FilePathParser $filePathParser)
+  public function __construct(YAMLParser $frontMatterParser, FilePathParser $filePathParser)
   {
-    $this->yamlParser = $yamlParser;
+    $this->yamlParser = $frontMatterParser;
     $this->filePathParser = $filePathParser;
   }
 
@@ -28,7 +28,7 @@ class FileParser
    */
   public function parse($filePath)
   {
-    $str = file_get_contents($filePath);
+    $str = trim(file_get_contents($filePath));
     $lines = explode(PHP_EOL, $str);
 
     if (rtrim($lines[0]) === '---') {
@@ -36,29 +36,29 @@ class FileParser
       unset($lines[0]);
 
       $i = 1;
-      $yaml = array();
+      $frontMatter = array();
       foreach ($lines as $line) {
         if (rtrim($line) === '---') {
           break;
         }
-        $yaml[] = $line;
+        $frontMatter[] = $line;
         $i++;
       }
 
-      $yaml = implode(PHP_EOL, $yaml);
+      $frontMatter = implode(PHP_EOL, $frontMatter);
       $content = trim(implode(PHP_EOL, array_slice($lines, $i)));
 
     } else {
 
-      $yaml = $str;
-      $content = '';
+      $frontMatter = '';
+      $content = trim($str);
 
     }
 
     $filePathMeta = $this->parseFilePath($filePath);
-    $yaml = $this->parseYAML($yaml);
+    $frontMatter = $this->parseYAML($frontMatter) ?: array();
 
-    return new Document($filePath, $filePathMeta, $yaml, $content);
+    return new Document($filePath, array_merge($filePathMeta, $frontMatter), $content);
   }
 
   /**
