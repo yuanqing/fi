@@ -17,7 +17,7 @@ class Fi implements \Iterator
   private $mapCallbacks;
   private $sortCallbacks;
   private $fileParser;
-  private $fileIterator;
+  private $filePathIterator;
 
   /**
    * @param string $dataDir The directory containing the data files
@@ -26,35 +26,20 @@ class Fi implements \Iterator
    */
   public function __construct($dataDir, $filePathFormat)
   {
-    # check $dataDir
-    if (!is_dir($dataDir) || !is_readable($dataDir)) {
-      throw new \InvalidArgumentException(sprintf('Invalid data directory: \'%s\'', $dataDir));
-    }
-
     # normalise $args
     $dataDir = rtrim($dataDir, '/');
     $filePathFormat = $dataDir . '/' . ltrim($filePathFormat, '/');
-
-    $this->mapCallbacks = array();
-    $this->sortCallbacks = array();
+    $this->fileParser = new FileParser(new YAMLParser, new FilePathParser($filePathFormat));
 
     # dependencies
-    $yamlParser = new YAMLParser;
-    $filePathParser = new FilePathParser($filePathFormat);
-
-    # get all file paths that match the given file path format
-    $iterator = new FileFinder($dataDir, $filePathParser);
-
-    # sort file paths in ascending order
-    $this->fileParser = new FileParser($yamlParser, $filePathParser);
-    $this->fileIterator = new FileIterator($iterator, $this->fileParser);
-    $this->sort(function($document1, $document2) {
-      return strnatcasecmp($document1->getFilePath(), $document2->getFilePath());
-    });
+    $filePathFinder = new FilePathFinder($dataDir, $this->fileParser);
+    $this->filePathIterator = new FilePathIterator($filePathFinder, $this->fileParser);
+    $this->mapCallbacks = array();
+    $this->sortCallbacks = array();
   }
 
   /**
-   * Returns all files in {$fileIterator} as an array of Document objects
+   * Returns all files in {$filePathIterator} as an array of Document objects
    *
    * @return array
    */
@@ -64,7 +49,7 @@ class Fi implements \Iterator
   }
 
   /**
-   * Adds a callback for filtering the {$fileIterator}
+   * Adds a callback for filtering the {$filePathIterator}
    *
    * @param callable $callback Takes a single argument of type Document. The callback must return * false to exclude the Document from the iterator
    * @throws \InvalidArgumentException
@@ -74,13 +59,13 @@ class Fi implements \Iterator
     if (!is_callable($callback)) {
       throw new \InvalidArgumentException('Filter callback must be callable');
     }
-    $this->fileIterator->filter($callback);
+    $this->filePathIterator->filter($callback);
 
     return $this;
   }
 
   /**
-   * Adds a callback that is applied to each Document corresponding to each file in {$fileIterator}
+   * Adds a callback that is applied to each Document corresponding to each file in {$filePathIterator}
    *
    * @param callable $callback Takes a single argument of type Document. The callback must return * an object of type Document
    * @throws \InvalidArgumentException
@@ -96,7 +81,7 @@ class Fi implements \Iterator
   }
 
   /**
-   * Adds a callback for sorting the {$fileIterator}
+   * Adds a callback for sorting the {$filePathIterator}
    */
   public function sort()
   {
@@ -123,8 +108,8 @@ class Fi implements \Iterator
   }
 
   /**
-   * @param string $fieldName The name of the field by which to sort the {$fileIterator}
-   * @param int $sortOrder The order with which to sort the {$fileIterator}
+   * @param string $fieldName The name of the field by which to sort the {$filePathIterator}
+   * @param int $sortOrder The order with which to sort the {$filePathIterator}
    * @throws \InvalidArgumentException
    */
   private function sortByFieldName($fieldName, $sortOrder = Fi::ASC)
@@ -145,26 +130,26 @@ class Fi implements \Iterator
   }
 
   /**
-   * Sorts the {$fileIterator} using the callbacks in {$sortCallbacks} before rewinding
+   * Sorts the {$filePathIterator} using the callbacks in {$sortCallbacks} before rewinding
    * the iterator
    */
   public function rewind()
   {
     foreach ($this->sortCallbacks as $callback) {
-      $this->fileIterator = $this->fileIterator->sort($callback);
+      $this->filePathIterator = $this->filePathIterator->sort($callback);
     }
     $this->sortCallbacks = array(); # empty the {$sortCallbacks} array
-    $this->fileIterator->rewind();
+    $this->filePathIterator->rewind();
   }
 
   /**
-   * Parses the file currently pointed to by the {$fileIterator} into a Document
+   * Parses the file currently pointed to by the {$filePathIterator} into a Document
    *
    * @return Document
    */
   public function current()
   {
-    $filePath = $this->fileIterator->current();
+    $filePath = $this->filePathIterator->current();
     $document = $this->fileParser->parse($filePath);
 
     # pass the $document through all the {$mapCallbacks}
@@ -177,17 +162,17 @@ class Fi implements \Iterator
 
   public function key()
   {
-    return $this->fileIterator->key();
+    return $this->filePathIterator->key();
   }
 
   public function next()
   {
-    return $this->fileIterator->next();
+    return $this->filePathIterator->next();
   }
 
   public function valid()
   {
-    return $this->fileIterator->valid();
+    return $this->filePathIterator->valid();
   }
 
 }

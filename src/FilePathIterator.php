@@ -9,17 +9,16 @@
 
 namespace yuanqing\Fi;
 
-class FileIterator extends \FilterIterator
+class FilePathIterator extends \FilterIterator
 {
   private $fileParser;
   private $filterCallbacks;
 
   /**
-   * @param \Iterator $dataDir The file path to the directory containing the
-   * data files, or an ArrayIterator over the data files
+   * @param \Traversable $iterator An iterator over the data files
    * @param FileParser $fileParser
    */
-  public function __construct(\Iterator $iterator, FileParser $fileParser)
+  public function __construct(\Traversable $iterator, FileParser $fileParser)
   {
     parent::__construct($iterator);
     $this->fileParser = $fileParser;
@@ -60,13 +59,9 @@ class FileIterator extends \FilterIterator
   public function sort($callback)
   {
     $arr = iterator_to_array($this, false);
-    $fileParser = $this->fileParser; # can't use $this inside the callback in PHP 5.3 :|
+    $fileParser = $this->fileParser;
     usort($arr, function($filePath1, $filePath2) use ($callback, $fileParser) {
-      return call_user_func(
-        $callback,
-        $fileParser->parse($filePath1),
-        $fileParser->parse($filePath2)
-      );
+      return call_user_func($callback, $fileParser->parse($filePath1), $fileParser->parse($filePath2));
     });
     return new $this(new \ArrayIterator($arr), $this->fileParser);
   }

@@ -44,37 +44,36 @@ class FiTest extends PHPUnit_Framework_TestCase
     $fi = new Fi($dataDir, '{{ foo }}');
   }
 
-  public function testBaseline()
-  {
-    $fi = new Fi('test/data', '{{ order: d }} - {{ title: s }}.md');
-    $this->assertTrue($fi instanceof \Iterator);
-
-    $j = 0;
-    foreach ($fi as $i => $document) {
-      $this->assertSame($i, $j);
-      $j++;
-      $this->assertTrue($document instanceof Document);
-      $expected = $this->documents[$i];
-      $this->assertSame($document->getFilePath(), $expected['filePath']);
-      $this->assertSame($document->getFields(), $expected['fields']);
-      foreach ($document->getFields() as $fieldName => $fieldVal) {
-        $this->assertSame($document->hasField($fieldName), isset($expected['fields'][$fieldName]));
-        $this->assertSame($document->getField($fieldName), $expected['fields'][$fieldName]);
-      }
-      $this->assertSame($document->hasContent(), $expected['content'] !== '');
-      $this->assertSame($document->getContent(), $expected['content']);
-    }
-
-    $documents = $fi->get();
-    $this->assertTrue(is_array($documents));
-    $this->assertTrue(count($documents) === 3);
-  }
-
   public function testNoMatch()
   {
     $fi = new Fi('test/data', '{{ order: d }} - {{ title: s }}.txt');
     $fi->sort('order', Fi::ASC);
     $this->assertTrue(count($fi->get()) === 0);
+  }
+
+  public function testGet()
+  {
+    $fi = new Fi('test/data', '{{ order: d }} - {{ title: s }}.md');
+    $documents = $fi->get();
+    $this->assertTrue(is_array($documents));
+    $this->assertTrue(count($documents) === 3);
+    $j = 0;
+    foreach ($documents as $i => $document) {
+      $this->assertSame($i, $j++);
+      $this->assertDocumentEquals($document, $i);
+    }
+  }
+
+  public function testIteration()
+  {
+    $fi = new Fi('test/data', '{{ order: d }} - {{ title: s }}.md');
+    $this->assertTrue($fi instanceof \Iterator);
+    $this->assertTrue(iterator_count($fi) === 3);
+    $j = 0;
+    foreach ($fi as $i => $document) {
+      $this->assertSame($i, $j++);
+      $this->assertDocumentEquals($document, $i);
+    }
   }
 
   /**
@@ -117,6 +116,7 @@ class FiTest extends PHPUnit_Framework_TestCase
   public function testInvalidMap()
   {
     $fi = new Fi('test/data', '{{ order: d }} - {{ title: s }}.md');
+
     $fi->map(null)->get();
   }
 
@@ -138,6 +138,7 @@ class FiTest extends PHPUnit_Framework_TestCase
   public function testInvalidSortUsingCallback()
   {
     $fi = new Fi('test/data', '{{ order: d }} - {{ title: s }}.md');
+
     $fi->sort(null)->get();
   }
 
@@ -173,7 +174,22 @@ class FiTest extends PHPUnit_Framework_TestCase
   public function testInvalidSortByFieldName()
   {
     $fi = new Fi('test/data', '{{ order: d }} - {{ title: s }}.md');
+
     $fi->sort('title', null)->get();
+  }
+
+  private function assertDocumentEquals($document, $expectedIndex)
+  {
+    $expected = $this->documents[$expectedIndex];
+    $this->assertTrue($document instanceof Document);
+    $this->assertSame($document->getFilePath(), $expected['filePath']);
+    $this->assertSame($document->getFields(), $expected['fields']);
+    foreach ($document->getFields() as $fieldName => $fieldVal) {
+      $this->assertSame($document->hasField($fieldName), isset($expected['fields'][$fieldName]));
+      $this->assertSame($document->getField($fieldName), $expected['fields'][$fieldName]);
+    }
+    $this->assertSame($document->hasContent(), $expected['content'] !== '');
+    $this->assertSame($document->getContent(), $expected['content']);
   }
 
   private function assertContentEquals($documents, $contentArr)
