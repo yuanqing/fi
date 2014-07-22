@@ -49,7 +49,7 @@ class Fi implements \Iterator
     $this->fileParser = new FileParser($yamlParser, $filePathParser);
     $this->fileIterator = new FileIterator($iterator, $this->fileParser);
     $this->sort(function($document1, $document2) {
-      return strnatcmp($document1->getFilePath(), $document2->getFilePath());
+      return strnatcasecmp($document1->getFilePath(), $document2->getFilePath());
     });
   }
 
