@@ -59,7 +59,7 @@ class FileIterator extends \FilterIterator
    */
   public function sort($callback)
   {
-    $arr = iterator_to_array($this, false);
+    $arr = array_values(iterator_to_array($this, false));
     $fileParser = $this->fileParser; # can't use $this inside the callback in PHP 5.3 :|
     uasort($arr, function($filePath1, $filePath2) use ($callback, $fileParser) {
       return call_user_func(
