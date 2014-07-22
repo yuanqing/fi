@@ -34,15 +34,6 @@ class FiTest extends PHPUnit_Framework_TestCase
     );
   }
 
-  private function dump($fi)
-  {
-    echo "\n\n" . '=== START DUMP ===' . "\n";
-    foreach ($fi as $f) {
-      var_dump($f);
-    }
-    echo '=== END DUMP ===' . "\n\n";
-  }
-
   /**
    * @expectedException InvalidArgumentException
    */
@@ -57,8 +48,6 @@ class FiTest extends PHPUnit_Framework_TestCase
   {
     $fi = new Fi('test/data', '{{ order: d }} - {{ title: s }}.md');
     $this->assertTrue($fi instanceof \Iterator);
-
-    $this->dump($fi);
 
     $j = 0;
     foreach ($fi as $i => $document) {

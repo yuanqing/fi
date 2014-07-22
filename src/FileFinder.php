@@ -35,7 +35,6 @@ class FileFinder extends \FilterIterator
    */
   public function accept()
   {
-    var_dump($this->key());
     if ($this->filePathParser->parse(parent::current()) === null) {
       return false;
     }
