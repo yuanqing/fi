@@ -16,22 +16,31 @@ class FiTest extends PHPUnit_Framework_TestCase
   protected function setUp()
   {
     $this->documents = array(
-      array(
+      0 => array(
         'filePath' => 'test/data/0 - Foo.md',
         'fields' => array('order' => 0, 'title' => 'Qux'),
         'content' => 'qux'
       ),
-      array(
+      1 => array(
         'filePath' => 'test/data/1 - Bar.md',
         'fields' => array('order' => 1, 'title' => 'Bar'),
         'content' => 'bar'
       ),
-      array(
+      2 => array(
         'filePath' => 'test/data/2 - Baz.md',
         'fields' => array('order' => 2, 'title' => 'Baz'),
         'content' => ''
       )
     );
+  }
+
+  private function dump($fi)
+  {
+    echo "\n\n" . '=== START DUMP ===' . "\n";
+    foreach ($fi as $f) {
+      var_dump($f);
+    }
+    echo '=== END DUMP ===' . "\n\n";
   }
 
   /**
@@ -48,6 +57,8 @@ class FiTest extends PHPUnit_Framework_TestCase
   {
     $fi = new Fi('test/data', '{{ order: d }} - {{ title: s }}.md');
     $this->assertTrue($fi instanceof \Iterator);
+
+    $this->dump($fi);
 
     foreach ($fi as $i => $document) {
       $this->assertTrue($document instanceof Document);
