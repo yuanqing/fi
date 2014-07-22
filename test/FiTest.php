@@ -60,7 +60,10 @@ class FiTest extends PHPUnit_Framework_TestCase
 
     $this->dump($fi);
 
+    $j = 0;
     foreach ($fi as $i => $document) {
+      $this->assertSame($i, $j);
+      $j++;
       $this->assertTrue($document instanceof Document);
       $expected = $this->documents[$i];
       $this->assertSame($document->getFilePath(), $expected['filePath']);
