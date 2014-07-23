@@ -1,13 +1,12 @@
 <?php
 /**
- * X.php
+ * Fi.php
  *
  * @author Lim Yuan Qing <hello@yuanqing.sg>
  * @license MIT
  * @link http://github.com/yuanqing/X.php
  */
 
-use org\bovigo\vfs\vfsStream;
 use yuanqing\Fi\Fi;
 use yuanqing\Fi\Document;
 
@@ -15,23 +14,26 @@ class FiTest extends PHPUnit_Framework_TestCase
 {
   protected function setUp()
   {
+    $this->dataDir = 'test/fixtures';
+    $this->format = '{{ order: d }} - {{ title: s }}.md';
     $this->documents = array(
-      0 => array(
-        'filePath' => 'test/data/0 - Foo.md',
-        'fields' => array('order' => 0, 'title' => 'Qux'),
-        'content' => 'qux'
+      array(
+        'filePath' => $this->dataDir . '/0 - foo.md',
+        'fields' => array('order' => 3, 'title' => 'foo title', 'tag' => 'default tag'),
+        'content' => 'foo content'
       ),
-      1 => array(
-        'filePath' => 'test/data/1 - Bar.md',
-        'fields' => array('order' => 1, 'title' => 'Bar'),
-        'content' => 'bar'
+      array(
+        'filePath' => $this->dataDir . '/1 - bar.md',
+        'fields' => array('order' => 1, 'title' => 'bar', 'tag' => 'bar tag'),
+        'content' => 'default content'
       ),
-      2 => array(
-        'filePath' => 'test/data/2 - Baz.md',
-        'fields' => array('order' => 2, 'title' => 'Baz'),
-        'content' => ''
+      array(
+        'filePath' => $this->dataDir . '/2 - baz.md',
+        'fields' => array('order' => 2, 'title' => 'baz', 'tag' => 'default tag'),
+        'content' => 'baz content'
       )
     );
+    $this->fi = Fi::query($this->dataDir, $this->format);
   }
 
   /**
@@ -41,39 +43,39 @@ class FiTest extends PHPUnit_Framework_TestCase
   {
     $dataDir = '';
     $this->assertFalse(file_exists($dataDir));
-    $fi = new Fi($dataDir, '{{ foo }}');
-  }
-
-  public function testNoMatch()
-  {
-    $fi = new Fi('test/data', '{{ order: d }} - {{ title: s }}.txt');
-    $fi->sort('order', Fi::ASC);
-    $this->assertTrue(count($fi->get()) === 0);
-  }
-
-  public function testGet()
-  {
-    $fi = new Fi('test/data', '{{ order: d }} - {{ title: s }}.md');
-    $documents = $fi->get();
-    $this->assertTrue(is_array($documents));
-    $this->assertTrue(count($documents) === 3);
-    $j = 0;
-    foreach ($documents as $i => $document) {
-      $this->assertSame($i, $j++);
-      $this->assertDocumentEquals($document, $i);
-    }
+    $fi = Fi::query($dataDir, '{{ order: d }} - {{ title: s }}.txt');
   }
 
   public function testIteration()
   {
-    $fi = new Fi('test/data', '{{ order: d }} - {{ title: s }}.md');
-    $this->assertTrue($fi instanceof \Iterator);
-    $this->assertTrue(iterator_count($fi) === 3);
+    $this->assertTrue($this->fi instanceof \Iterator);
+    $this->assertTrue(iterator_count($this->fi) === 3);
     $j = 0;
-    foreach ($fi as $i => $document) {
+    foreach ($this->fi as $i => $document) {
       $this->assertSame($i, $j++);
-      $this->assertDocumentEquals($document, $i);
+      $this->assertDocumentEquals($document, $this->documents[$i]);
     }
+  }
+
+  public function testToArray()
+  {
+    $arr = $this->fi->toArr();
+    $this->assertTrue(is_array($arr));
+    $this->assertTrue(count($arr) === 3);
+    $j = 0;
+    foreach ($arr as $i => $document) {
+      $this->assertSame($i, $j++);
+      $this->assertDocumentEquals($document, $this->documents[$i]);
+    }
+  }
+
+  /**
+   * @expectedException InvalidArgumentException
+   */
+  public function testInvalidGetField()
+  {
+    $arr = $this->fi->toArr();
+    $arr[0]->getField('foo');
   }
 
   /**
@@ -81,33 +83,18 @@ class FiTest extends PHPUnit_Framework_TestCase
    */
   public function testInvalidFilter()
   {
-    $fi = new Fi('test/data', '{{ order: d }} - {{ title: s }}.md');
-    $fi->filter(null)->get();
+    $this->fi->filter(null)->toArr();
   }
 
   public function testFilter()
   {
-    $fi = new Fi('test/data', '{{ order: d }} - {{ title: s }}.md');
-
-    $fi->filter(function($document) {
-      return $document->getField('title') !== 'Qux';
+    $this->fi->filter(function($document) {
+      return $document->getField('title') !== 'foo title';
     });
-    $documents = $fi->get();
-    $this->assertFieldEquals($documents, 'title', array('Bar', 'Baz'));
-  }
-
-  public function testMap()
-  {
-    $fi = new Fi('test/data', '{{ order: d }} - {{ title: s }}.md');
-
-    $fi->map(function($document) {
-      $document->setField('title', 'Quux');
-      $document->setContent('quux');
-      return $document;
-    });
-    $documents = $fi->get();
-    $this->assertFieldEquals($documents, 'title', array('Quux', 'Quux', 'Quux'));
-    $this->assertContentEquals($documents, array('quux', 'quux', 'quux'));
+    $arr = $this->fi->toArr();
+    $this->assertTrue(count($arr) === 2);
+    $this->assertDocumentEquals($arr[0], $this->documents[1]);
+    $this->assertDocumentEquals($arr[1], $this->documents[2]);
   }
 
   /**
@@ -115,21 +102,30 @@ class FiTest extends PHPUnit_Framework_TestCase
    */
   public function testInvalidMap()
   {
-    $fi = new Fi('test/data', '{{ order: d }} - {{ title: s }}.md');
-
-    $fi->map(null)->get();
+    $this->fi->map(null)->toArr();
   }
 
-  public function testSortUsingCallback()
+  public function testMap()
   {
-    $fi = new Fi('test/data', '{{ order: d }} - {{ title: s }}.md');
-
-    # 'title' field, ascending
-    $fi->sort(function($document1, $document2) {
-      return strnatcmp($document1->getField('title'), $document2->getField('title'));
+    $this->fi->map(function($document) {
+      if ($document->getField('title') === 'foo title') {
+        $document->setField('title', 'changed title');
+        $document->setField('order', null); # unsets the 'order' field
+        $document->setContent('changed content');
+      }
+      return $document;
     });
-    $documents = $fi->get();
-    $this->assertFieldEquals($documents, 'title', array('Bar', 'Baz', 'Qux'));
+    $arr = $this->fi->toArr();
+    $this->assertTrue(count($arr) === 3);
+    $this->assertDocumentEquals($arr[0],
+      array(
+        'filePath' => $this->dataDir . '/0 - foo.md',
+        'fields' => array('title' => 'changed title', 'tag' => 'default tag'),
+        'content' => 'changed content'
+      )
+    );
+    $this->assertDocumentEquals($arr[1], $this->documents[1]);
+    $this->assertDocumentEquals($arr[2], $this->documents[2]);
   }
 
   /**
@@ -137,35 +133,20 @@ class FiTest extends PHPUnit_Framework_TestCase
    */
   public function testInvalidSortUsingCallback()
   {
-    $fi = new Fi('test/data', '{{ order: d }} - {{ title: s }}.md');
-
-    $fi->sort(null)->get();
+    $this->fi->sort(null)->toArr();
   }
 
-  public function testSortByFieldNameNumeric()
+  public function testSortUsingCallback()
   {
-    $fi = new Fi('test/data', '{{ order: d }} - {{ title: s }}.md');
-
-    # 'order' field, descending
-    $documents = $fi->sort('order', Fi::DESC)->get();
-    $this->assertFieldEquals($documents, 'order', array(2, 1, 0));
-
-    # 'order' field, ascending
-    $documents = $fi->sort('order', Fi::ASC)->get();
-    $this->assertFieldEquals($documents, 'order', array(0, 1, 2));
-  }
-
-  public function testSortByFieldNameString()
-  {
-    $fi = new Fi('test/data', '{{ order: d }} - {{ title: s }}.md');
-
-    # 'title' field, descending
-    $documents = $fi->sort('title', Fi::DESC)->get();
-    $this->assertFieldEquals($documents, 'title', array('Qux', 'Baz', 'Bar'));
-
-    # 'title' field, ascending
-    $documents = $fi->sort('title', Fi::ASC)->get();
-    $this->assertFieldEquals($documents, 'title', array('Bar', 'Baz', 'Qux'));
+    # 'title', ascending
+    $this->fi->sort(function($document1, $document2) {
+      return strnatcmp($document1->getField('title'), $document2->getField('title'));
+    });
+    $arr = $this->fi->toArr();
+    $this->assertTrue(count($arr) === 3);
+    $this->assertDocumentEquals($arr[0], $this->documents[1]);
+    $this->assertDocumentEquals($arr[1], $this->documents[2]);
+    $this->assertDocumentEquals($arr[2], $this->documents[0]);
   }
 
   /**
@@ -173,39 +154,51 @@ class FiTest extends PHPUnit_Framework_TestCase
    */
   public function testInvalidSortByFieldName()
   {
-    $fi = new Fi('test/data', '{{ order: d }} - {{ title: s }}.md');
-
-    $fi->sort('title', null)->get();
+    $this->fi->sort('order', null)->toArr();
   }
 
-  private function assertDocumentEquals($document, $expectedIndex)
+  public function testSortByFieldNameNumeric()
   {
-    $expected = $this->documents[$expectedIndex];
+    # 'order', ascending
+    $arr = $this->fi->sort('order', Fi::ASC)->toArr();
+    $this->assertDocumentEquals($arr[0], $this->documents[1]);
+    $this->assertDocumentEquals($arr[1], $this->documents[2]);
+    $this->assertDocumentEquals($arr[2], $this->documents[0]);
+
+    # 'order', descending
+    $arr = $this->fi->sort('order', Fi::DESC)->toArr();
+    $this->assertDocumentEquals($arr[0], $this->documents[0]);
+    $this->assertDocumentEquals($arr[1], $this->documents[2]);
+    $this->assertDocumentEquals($arr[2], $this->documents[1]);
+  }
+
+  public function testSortByFieldNameString()
+  {
+    # 'title', ascending
+    $arr = $this->fi->sort('title', Fi::ASC)->toArr();
+    $this->assertDocumentEquals($arr[0], $this->documents[1]);
+    $this->assertDocumentEquals($arr[1], $this->documents[2]);
+    $this->assertDocumentEquals($arr[2], $this->documents[0]);
+
+    # 'title', descending
+    $arr = $this->fi->sort('title', Fi::DESC)->toArr();
+    $this->assertDocumentEquals($arr[0], $this->documents[0]);
+    $this->assertDocumentEquals($arr[1], $this->documents[2]);
+    $this->assertDocumentEquals($arr[2], $this->documents[1]);
+  }
+
+  private function assertDocumentEquals($document, $expected)
+  {
     $this->assertTrue($document instanceof Document);
-    $this->assertSame($document->getFilePath(), $expected['filePath']);
-    $this->assertSame($document->getFields(), $expected['fields']);
+    $this->assertSame($expected['filePath'], $document->getFilePath());
+    $actualFields = $document->getFields();
+    $this->assertEmpty(array_merge(array_diff($expected['fields'], $actualFields), array_diff($actualFields, $expected['fields'])));
     foreach ($document->getFields() as $fieldName => $fieldVal) {
-      $this->assertSame($document->hasField($fieldName), isset($expected['fields'][$fieldName]));
-      $this->assertSame($document->getField($fieldName), $expected['fields'][$fieldName]);
+      $this->assertSame(isset($expected['fields'][$fieldName]), $document->hasField($fieldName));
+      $this->assertSame($expected['fields'][$fieldName], $document->getField($fieldName));
     }
-    $this->assertSame($document->hasContent(), $expected['content'] !== '');
-    $this->assertSame($document->getContent(), $expected['content']);
-  }
-
-  private function assertContentEquals($documents, $contentArr)
-  {
-    $this->assertTrue(count($documents) === count($contentArr));
-    foreach ($documents as $i => $document) {
-      $this->assertSame($document->getContent(), $contentArr[$i]);
-    }
-  }
-
-  private function assertFieldEquals($documents, $fieldName, $fieldValues)
-  {
-    $this->assertTrue(count($documents) === count($fieldValues));
-    foreach ($documents as $i => $document) {
-      $this->assertSame($document->getField($fieldName), $fieldValues[$i]);
-    }
+    $this->assertSame($expected['content'] !== '', $document->hasContent());
+    $this->assertSame($expected['content'], $document->getContent());
   }
 
 }

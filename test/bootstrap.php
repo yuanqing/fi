@@ -1,10 +1,10 @@
 <?php
 /**
- * FooBar.php - ...
+ * Fi.php
  *
  * @author Lim Yuan Qing <hello@yuanqing.sg>
  * @license MIT
- * @link https://github.com/yuanqing/foobar
+ * @link http://github.com/yuanqing/X.php
  */
 
 error_reporting(E_ALL);

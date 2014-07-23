@@ -9,7 +9,7 @@
 
 namespace yuanqing\Fi;
 
-class FilePathIterator extends \FilterIterator
+class FileIterator extends \FilterIterator
 {
   private $fileParser;
   private $filterCallbacks;
@@ -65,5 +65,4 @@ class FilePathIterator extends \FilterIterator
     });
     return new $this(new \ArrayIterator($arr), $this->fileParser);
   }
-
 }

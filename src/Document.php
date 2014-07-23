@@ -47,7 +47,11 @@ class Document
 
   public function setField($fieldName, $fieldValue)
   {
-    $this->fields[$fieldName] = $fieldValue;
+    if ($fieldValue === null) {
+      unset($this->fields[$fieldName]);
+    } else {
+      $this->fields[$fieldName] = $fieldValue;
+    }
     return $this;
   }
 

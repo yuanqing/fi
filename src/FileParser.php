@@ -13,11 +13,13 @@ class FileParser
 {
   private $frontMatterParser;
   private $filePathParser;
+  private $defaultsFileName;
 
-  public function __construct(YAMLParser $frontMatterParser, FilePathParser $filePathParser)
+  public function __construct(YAMLParser $yamlParser, FilePathParser $filePathParser, $defaultsFileName)
   {
-    $this->yamlParser = $frontMatterParser;
+    $this->yamlParser = $yamlParser;
     $this->filePathParser = $filePathParser;
+    $this->defaultsFileName = $defaultsFileName;
   }
 
   /**
@@ -27,6 +29,21 @@ class FileParser
    * @return Document
    */
   public function parse($filePath)
+  {
+    $filePathMeta = $this->parseFilePath($filePath);
+    $document = $this->parseFile($filePath);
+    $document[0] = array_merge($filePathMeta, $document[0]);
+
+    $defaultsFilePath = dirname($filePath) . '/' . $this->defaultsFileName;
+    if (is_file($defaultsFilePath)) {
+      $defaults = $this->parseFile($defaultsFilePath);
+      $document[0] = array_merge($defaults[0], $document[0]);
+      $document[1] = $document[1] ?: $defaults[1];
+    }
+    return new Document($filePath, $document[0], $document[1]);
+  }
+
+  private function parseFile($filePath)
   {
     $str = trim(file_get_contents($filePath));
     $lines = explode(PHP_EOL, $str);
@@ -55,10 +72,9 @@ class FileParser
 
     }
 
-    $filePathMeta = $this->parseFilePath($filePath);
     $frontMatter = $this->parseYAML($frontMatter) ?: array();
 
-    return new Document($filePath, array_merge($filePathMeta, $frontMatter), $content);
+    return array($frontMatter, $content);
   }
 
   /**
