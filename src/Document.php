@@ -1,6 +1,6 @@
 <?php
 /**
- * Fi.php
+ * Fi.php - Query a collection of text files like a document database in PHP.
  *
  * @author Lim Yuan Qing <hello@yuanqing.sg>
  * @license MIT
@@ -45,19 +45,19 @@ class Document
     return $this->fields[$fieldName];
   }
 
-  public function setField($fieldName, $fieldValue)
+  public function setField($fieldName, $fieldVal)
   {
-    if ($fieldValue === null) {
+    if ($fieldVal === null) {
       unset($this->fields[$fieldName]);
     } else {
-      $this->fields[$fieldName] = $fieldValue;
+      $this->fields[$fieldName] = $fieldVal;
     }
     return $this;
   }
 
   public function hasContent()
   {
-    return $this->content !== '';
+    return $this->content !== null && $this->content !== '';
   }
 
   public function getContent()

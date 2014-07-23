@@ -1,7 +1,7 @@
 {
   "name": "yuanqing/fi",
-  "description": "",
-  "keywords": [],
+  "description": "Query a collection of text files like a document database in PHP.",
+  "keywords": ["file", "document", "frontmatter", "static", "ODM"],
   "homepage": "https://github.com/yuanqing/fi",
   "license": "MIT",
   "authors": [

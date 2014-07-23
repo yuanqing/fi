@@ -1,6 +1,6 @@
 <?php
 /**
- * Fi.php
+ * Fi.php - Query a collection of text files like a document database in PHP.
  *
  * @author Lim Yuan Qing <hello@yuanqing.sg>
  * @license MIT
@@ -146,7 +146,10 @@ class Collection implements \Iterator
 
     # pass the $document through all the {$mapCallbacks}
     foreach ($this->mapCallbacks as $callback) {
-      $document = call_user_func($callback, $document);
+      $result = call_user_func($callback, $document);
+      if ($result instanceof Document) {
+        $document = $result;
+      }
     }
 
     return $document;

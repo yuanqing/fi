@@ -1,6 +1,6 @@
 <?php
 /**
- * Fi.php
+ * Fi.php - Query a collection of text files like a document database in PHP.
  *
  * @author Lim Yuan Qing <hello@yuanqing.sg>
  * @license MIT
