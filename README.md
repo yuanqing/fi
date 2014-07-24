@@ -1,10 +1,83 @@
 # Fi.php [![Packagist Version](http://img.shields.io/packagist/v/yuanqing/fi.svg)](https://packagist.org/packages/yuanqing/fi) [![Build Status](https://img.shields.io/travis/yuanqing/fi.svg)](https://travis-ci.org/yuanqing/fi) [![Coverage Status](https://img.shields.io/coveralls/yuanqing/fi.svg)](https://coveralls.io/r/yuanqing/fi)
 
+Fi (rhymes with *pie*) lets you query and perform various operations (namely filter, map, and sort) on a collection of text files, as if the collection were a database. It is designed to be used as part of a [static site generator](http://staticsitegenerators.net/).
+
+## Quick Start
+
+Suppose our text files are organized into date-based folders inside a directory called `data` like so:
+```
+data/
+|
+|-- 2014/
+|   |-- 01/
+|   |   |-- 01-foo.md
+|   |   |-- 02-bar.md
+|   |   `-- ...
+|   |-- 02/
+|   |   `-- ...
+|   `-- ...
+`-- ...
+```
+
+Each text file would then have some [YAML frontmatter](http://jekyllrb.com/docs/frontmatter/) and content:
+
+```
+---
+title: foo
+---
+foo
+```
+
+With Fi, we can quickly grab data from our `data` directory like so:
+
+```php
+$dataDir = './data';
+$filePathFormat = '{{ date.year: 4d }}/{{ date.month: 2d }}/{{ date.date: 2d }}-{{ title: s }}.md';
+$collection = Fi::query($dataDir, $filePathFormat); #=> Collection object
+```
+
+Each file in the directory that matches the specified `$filePathFormat` is a *Document*. A *Collection* is simply an [Iterator](http://php.net/manual/en/class.iterator.php) over a set of Document objects:
+
+```php
+foreach ($collection as $document) {
+  $document->getField('year'); #=> 2014, 2014, ...
+  $document->getField('month'); #=> 1, 1, ...
+  $document->getField('day'); #=> 1, 2, ...
+  $document->getField('title'); #=> 'foo', 'bar', ...
+}
+```
+
+We can also perform any number of filter, map, or sort operations over the Collection:
+
+```php
+# excludes Documents with the title 'foo'
+$filterCallback = function(Document $document) {
+  return $document->getField('title') !== 'foo';
+};
+
+# sets the title of all Documents to 'baz'
+$mapCallback = function(Document $document) {
+  $document->setField('title', 'baz');
+  return $document;
+};
+
+# sorts by Document content in ascending order
+$sortCallback = function(Document $document1, Document $document2) {
+  $content1 = $document1->getContent();
+  $content2 = $document2->getContent();
+  return strnatcasecmp($content1, $content2);
+};
+
+$collection
+  ->filter($filterCallback)
+  ->map($mapCallback)
+  ->sort($sortCallback)
+  ->toArr();
+```
+
+The `filter`, `map`, and `sort` methods all return the original Collection instance, allowing this manner of method chaining.
+
 ## API
-
-Fi.php is currently in active development; this API is still subject to change.
-
--
 
 ### Fi
 
@@ -18,19 +91,11 @@ $filePathFormat = '{{ year: 4d }}/{{ month: 2d }}/{{ title: s }}.md';
 $collection = Fi::query($dataDir, $filePathFormat);
 ```
 
+The `$filePathFormat` is specified in a syntax used by [Extract.php](https://github.com/yuanqing/extract).
+
 -
 
 ### Collection
-
-All other methods apart from `toArr` return the original Collection instance. This means that we can chain method calls like so:
-
-```php
-$collection
-  ->filter($filterCallback)
-  ->map($mapCallback)
-  ->sort($sortCallback)
-  ->toArr();
-```
 
 #### Collection filter ( callable $callback )
 
@@ -146,7 +211,7 @@ $document->hasContent(); #=> true
 
 #### string getContent ( )
 
-Get the Document content.
+Gets the Document content.
 
 ```php
 $document->getContent(); #=> 'foo'
@@ -164,19 +229,19 @@ $document->setContent('bar'); #=> Document
 
 ## Requirements
 
-Fi.php requires at least **PHP 5.3**, or **HHVM**.
+Fi requires at least **PHP 5.3**, or **HHVM**.
 
-## Install with Composer
+## Installation
 
 1. Install [Composer](http://getcomposer.org/).
 
-2. Install [the Fi.php Composer package](https://packagist.org/packages/yuanqing/fi):
+2. Install [the Composer package](https://packagist.org/packages/yuanqing/fi):
 
     ```
     $ composer require yuanqing/fi ~0.1
     ```
 
-3. In your PHP, require the Composer autoloader:
+3. In your PHP file, require the Composer autoloader:
 
     ```php
     require_once __DIR__ . '/vendor/autoload.php';
