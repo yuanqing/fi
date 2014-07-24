@@ -1,25 +1,27 @@
 # Fi.php [![Packagist Version](http://img.shields.io/packagist/v/yuanqing/fi.svg)](https://packagist.org/packages/yuanqing/fi) [![Build Status](https://img.shields.io/travis/yuanqing/fi.svg)](https://travis-ci.org/yuanqing/fi) [![Coverage Status](https://img.shields.io/coveralls/yuanqing/fi.svg)](https://coveralls.io/r/yuanqing/fi)
 
-Fi (rhymes with *pie*) lets you query and perform various operations (namely filter, map, and sort) on a collection of text files, as if the collection were a database. It is designed to be used as part of a [static site generator](http://staticsitegenerators.net/).
+Fi (rhymes with *pie*) lets you query and perform various operations (namely filter, map, and sort) on a collection of text files, as if the collection were a database.
+
+Fi is designed to be used as part of a [static site generator](http://staticsitegenerators.net/).
 
 ## Quick Start
 
-Suppose our text files are organized into date-based folders inside a directory called `data` like so:
+Suppose our text files are organized into date-based folders like so:
+
 ```
 data/
 |
-|-- 2014/
-|   |-- 01/
-|   |   |-- 01-foo.md
-|   |   |-- 02-bar.md
-|   |   `-- ...
-|   |-- 02/
-|   |   `-- ...
-|   `-- ...
-`-- ...
+`-- 2014/
+    |-- 01/
+    |   |-- 01-foo.md
+    |   |-- 02-bar.md
+    |   `-- ...
+    |-- 02/
+    |   `-- ...
+    `-- ...
 ```
 
-Each text file would then have some [YAML frontmatter](http://jekyllrb.com/docs/frontmatter/) and content:
+Each text file would have some [YAML frontmatter](http://jekyllrb.com/docs/frontmatter/) and content:
 
 ```
 ---
@@ -28,15 +30,15 @@ title: foo
 foo
 ```
 
-With Fi, we can quickly grab data from our `data` directory like so:
+Using Fi, we can quickly grab data from our `data` directory:
 
 ```php
 $dataDir = './data';
-$filePathFormat = '{{ date.year: 4d }}/{{ date.month: 2d }}/{{ date.date: 2d }}-{{ title: s }}.md';
+$filePathFormat = '{{ year: 4d }}/{{ month: 2d }}/{{ date: 2d }}-{{ title: s }}.md';
 $collection = Fi::query($dataDir, $filePathFormat); #=> Collection object
 ```
 
-Each file in the directory that matches the specified `$filePathFormat` is a *Document*. A *Collection* is simply an [Iterator](http://php.net/manual/en/class.iterator.php) over a set of Document objects:
+Each file that matches the specified `$filePathFormat` is a *Document*. A *Collection* is simply an [Iterator](http://php.net/manual/en/class.iterator.php) over a set of Document objects:
 
 ```php
 foreach ($collection as $document) {
@@ -87,11 +89,11 @@ Factory method that makes a Collection object.
 
 ```php
 $dataDir = './data';
-$filePathFormat = '{{ year: 4d }}/{{ month: 2d }}/{{ title: s }}.md';
+$filePathFormat = '{{ year: 4d }}/{{ month: 2d }}/{{ date: 2d }}-{{ title: s }}.md';
 $collection = Fi::query($dataDir, $filePathFormat);
 ```
 
-The `$filePathFormat` is specified in a syntax used by [Extract.php](https://github.com/yuanqing/extract).
+The `$filePathFormat` is specified in a quasi-Regex syntax; see [Extract.php](https://github.com/yuanqing/extract).
 
 -
 
@@ -154,7 +156,7 @@ $collection->sort('title', Fi::DESC);
 Gets all the Documents in the Collection as an array.
 
 ```php
-$collection->toArr();
+$collection->toArr(); #=> [ Document object, Document object, ... ]
 ```
 
 -
@@ -182,7 +184,7 @@ $document->getFields(); #=> ['year' => 2014, 'month' => 1, 'title' => 'foo']
 Checks if the Document has a field with the specified `$fieldName`.
 
 ```php
-$document->hasField('description'); #=> false
+$document->hasField('title'); #=> true
 ```
 
 #### mixed getField ( mixed $fieldName )
@@ -198,7 +200,7 @@ $document->getField('title'); #=> 'foo'
 Sets the field with `$fieldName` to the specified `$fieldValue`.
 
 ```php
-$document->setField('title', 'bar'); #=> Document
+$document->setField('title', 'bar');
 ```
 
 #### bool hasContent ( )
@@ -222,7 +224,7 @@ $document->getContent(); #=> 'foo'
 Sets the Document content to the specified `$content`.
 
 ```php
-$document->setContent('bar'); #=> Document
+$document->setContent('bar');
 ```
 
 -
