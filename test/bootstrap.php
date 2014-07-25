@@ -4,7 +4,7 @@
  *
  * @author Lim Yuan Qing <hello@yuanqing.sg>
  * @license MIT
- * @link http://github.com/yuanqing/X.php
+ * @link https://github.com/yuanqing/fi
  */
 
 error_reporting(E_ALL);

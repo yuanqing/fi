@@ -76,6 +76,10 @@ class FileParser
    */
   private function parseFile($filePath, $isDefaultsFile = false)
   {
+    if (!is_file($filePath)) {
+      return array(array(), '');
+    }
+
     $str = trim(file_get_contents($filePath));
     $lines = explode(PHP_EOL, $str);
 
