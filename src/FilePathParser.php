@@ -21,11 +21,11 @@ class FilePathParser
   }
 
   /**
-   * Extracts values from a file path by matching it against {$filePathFormat}
+   * Extracts values from a file path by matching it against {$filePathFormat}.
    *
-   * @param string $filePath The file path to extract values from
+   * @param string $filePath The file path to extract values from.
    * @return array|null An array of values if the $filePath matches $this->filePathFormat,
-   * else returns null
+   * else returns null.
    */
   public function parse($filePath)
   {

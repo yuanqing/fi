@@ -21,10 +21,10 @@ class YAMLParser
   }
 
   /**
-   * Parses a raw YAML string
+   * Parses a raw YAML string.
    *
    * @param string $yamlStr
-   * @return array The fields in the YAML
+   * @return array The fields in the YAML.
    */
   public function parse($yamlStr)
   {

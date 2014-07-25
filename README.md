@@ -48,11 +48,13 @@ foreach ($collection as $document) {
 }
 ```
 
-We can also access a Document in `$collection` by index:
+We can also access a Document in the `$collection` by index:
 
 ```php
 $document = $collection->getDocument(0); #=> Document object
 $document->getField('title'); #=> 'foo'
+$document->getContent(); #=> 'bar'
+$document->getField('date'); #=> ['year' => 2014, 'month' => 1, 'day' => ]
 $document->getContent(); #=> 'bar'
 ```
 
