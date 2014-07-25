@@ -27,29 +27,36 @@ Each text file would have some [YAML frontmatter](http://jekyllrb.com/docs/front
 ---
 title: foo
 ---
-foo
+bar
 ```
 
-Using Fi, we can quickly grab data from our `data` directory:
+Using Fi, we can quickly grab data from the directory:
 
 ```php
 $dataDir = './data';
-$filePathFormat = '{{ year: 4d }}/{{ month: 2d }}/{{ date: 2d }}-{{ title: s }}.md';
+$filePathFormat = '{{ date.year: 4d }}/{{ date.month: 2d }}/{{ date.day: 2d }}-{{ title: s }}.md';
 $collection = Fi::query($dataDir, $filePathFormat); #=> Collection object
 ```
 
-Each file that matches the specified `$filePathFormat` is a *Document*. A *Collection* is simply an [Iterator](http://php.net/manual/en/class.iterator.php) over a set of Document objects:
+The `$filePathFormat` is specified using a quasi-Regex syntax; see [Extract.php](https://github.com/yuanqing/extract).
+
+Each file that matches said `$filePathFormat` is a *Document*. A *Collection* is simply an [Iterator](http://php.net/manual/en/class.iterator.php) over a set of Document objects:
 
 ```php
 foreach ($collection as $document) {
-  $document->getField('year'); #=> 2014, 2014, ...
-  $document->getField('month'); #=> 1, 1, ...
-  $document->getField('day'); #=> 1, 2, ...
-  $document->getField('title'); #=> 'foo', 'bar', ...
+  # ...
 }
 ```
 
-We can also perform any number of filter, map, or sort operations over the Collection:
+We can also access a Document in `$collection` by index:
+
+```php
+$document = $collection->getDocument(0); #=> Document object
+$document->getField('title'); #=> 'foo'
+$document->getContent(); #=> 'bar'
+```
+
+We can also perform any number of map, filter, or sort operations over the Collection:
 
 ```php
 # excludes Documents with the title 'foo'
@@ -93,7 +100,7 @@ $filePathFormat = '{{ year: 4d }}/{{ month: 2d }}/{{ date: 2d }}-{{ title: s }}.
 $collection = Fi::query($dataDir, $filePathFormat);
 ```
 
-The `$filePathFormat` is specified in a quasi-Regex syntax; see [Extract.php](https://github.com/yuanqing/extract).
+The `$filePathFormat` is specified using a quasi-Regex syntax; see [Extract.php](https://github.com/yuanqing/extract).
 
 -
 
@@ -231,7 +238,7 @@ $document->setContent('bar');
 
 ## Requirements
 
-Fi requires at least **PHP 5.3**, or **HHVM**.
+Fi requires at least **PHP 5.3** or **HHVM**, and [Composer](http://getcomposer.org/).
 
 ## Installation
 
@@ -256,6 +263,7 @@ You need [PHPUnit](http://phpunit.de/) to run the tests:
 ```
 $ git clone https://github.com/yuanqing/fi
 $ cd fi
+$ composer install
 $ phpunit
 ```
 

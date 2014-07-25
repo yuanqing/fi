@@ -15,20 +15,20 @@ class FiTest extends PHPUnit_Framework_TestCase
   protected function setUp()
   {
     $this->dataDir = 'test/fixtures';
-    $this->format = '{{ order: d }} - {{ title: s }}.md';
+    $this->format = 'blog/{{ order: d }} - {{ title: s }}.md';
     $this->documents = array(
       array(
-        'filePath' => $this->dataDir . '/0 - foo.md',
+        'filePath' => $this->dataDir . '/blog/0 - foo.md',
         'fields' => array('order' => 3, 'title' => 'foo title', 'tag' => 'default tag'),
         'content' => 'foo content'
       ),
       array(
-        'filePath' => $this->dataDir . '/1 - bar.md',
+        'filePath' => $this->dataDir . '/blog/1 - bar.md',
         'fields' => array('order' => 1, 'title' => 'bar', 'tag' => 'bar tag'),
-        'content' => 'default content'
+        'content' => 'blog default content'
       ),
       array(
-        'filePath' => $this->dataDir . '/2 - baz.md',
+        'filePath' => $this->dataDir . '/blog/2 - baz.md',
         'fields' => array('order' => 2, 'title' => 'baz', 'tag' => 'default tag'),
         'content' => 'baz content'
       )
@@ -57,6 +57,7 @@ class FiTest extends PHPUnit_Framework_TestCase
     }
   }
 
+
   public function testToArray()
   {
     $arr = $this->fi->toArr();
@@ -74,8 +75,7 @@ class FiTest extends PHPUnit_Framework_TestCase
    */
   public function testInvalidGetField()
   {
-    $arr = $this->fi->toArr();
-    $arr[0]->getField('foo');
+    $this->fi->getDocument(0)->getField('foo');
   }
 
   /**
@@ -83,7 +83,7 @@ class FiTest extends PHPUnit_Framework_TestCase
    */
   public function testInvalidFilter()
   {
-    $this->fi->filter(null)->toArr();
+    $this->fi->filter(null);
   }
 
   public function testFilter()
@@ -119,7 +119,7 @@ class FiTest extends PHPUnit_Framework_TestCase
     $this->assertTrue(count($arr) === 3);
     $this->assertDocumentEquals($arr[0],
       array(
-        'filePath' => $this->dataDir . '/0 - foo.md',
+        'filePath' => $this->documents[0]['filePath'],
         'fields' => array('title' => 'changed title', 'tag' => 'default tag'),
         'content' => 'changed content'
       )

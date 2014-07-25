@@ -15,11 +15,11 @@ class Document
   private $fields;
   private $content;
 
-  public function __construct($filePath, array $fields, $content)
+  public function __construct($filePath = null, array $fields = null, $content = null)
   {
     $this->filePath = $filePath;
-    $this->fields = $fields;
-    $this->content = $content;
+    $this->fields = $fields ?: array();
+    $this->content = $content ?: '';
   }
 
   public function getFilePath()
@@ -68,6 +68,30 @@ class Document
   public function setContent($content)
   {
     $this->content = $content;
+    return $this;
+  }
+
+  /**
+   * Merge $document's fields and content with this Document
+   *
+   * @param Document $document
+   */
+  public function mergeOver(Document $document)
+  {
+    $this->fields = array_merge($this->fields, $document->getFields());
+    $this->content = $document->getContent() ?: $this->content;
+    return $this;
+  }
+
+  /**
+   * Use $document's fields and content as the default values for this Document
+   *
+   * @param Document $document
+   */
+  public function mergeUnder(Document $document)
+  {
+    $this->fields = array_merge($document->getFields(), $this->fields);
+    $this->content = $this->content ?: $document->getContent();
     return $this;
   }
 

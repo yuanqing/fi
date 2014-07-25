@@ -11,7 +11,7 @@ namespace yuanqing\Fi;
 
 class FileParser
 {
-  private $frontMatterParser;
+  private $yamlParser;
   private $filePathParser;
   private $defaultsFileName;
 
@@ -30,21 +30,10 @@ class FileParser
    */
   public function parse($filePath)
   {
-    $filePathMeta = $this->parseFilePath($filePath);
-    $document = $this->parseFile($filePath);
-    $document[0] = array_merge($filePathMeta, $document[0]);
-
-    $defaultsFilePath = dirname($filePath) . '/' . $this->defaultsFileName;
-    if (is_file($defaultsFilePath)) {
-      $defaults = $this->parseFile($defaultsFilePath);
-      $document[0] = array_merge($defaults[0], $document[0]);
-      $document[1] = $document[1] ?: $defaults[1];
+    if (!is_file($filePath)) {
+      return new Document(null, array(), '');
     }
-    return new Document($filePath, $document[0], $document[1]);
-  }
 
-  private function parseFile($filePath)
-  {
     $str = trim(file_get_contents($filePath));
     $lines = explode(PHP_EOL, $str);
 
@@ -53,28 +42,29 @@ class FileParser
       unset($lines[0]);
 
       $i = 1;
-      $frontMatter = array();
+      $yaml = array();
       foreach ($lines as $line) {
         if (rtrim($line) === '---') {
           break;
         }
-        $frontMatter[] = $line;
+        $yaml[] = $line;
         $i++;
       }
 
-      $frontMatter = implode(PHP_EOL, $frontMatter);
+      $yaml = implode(PHP_EOL, $yaml);
       $content = trim(implode(PHP_EOL, array_slice($lines, $i)));
 
     } else {
 
-      $frontMatter = '';
+      $yaml = '';
       $content = trim($str);
 
     }
 
-    $frontMatter = $this->parseYAML($frontMatter) ?: array();
+    $filePathMeta = $this->parseFilePath($filePath) ?: array();
+    $yaml = $this->parseYAML($yaml) ?: array();
 
-    return array($frontMatter, $content);
+    return new Document($filePath, array_merge($filePathMeta, $yaml), $content);
   }
 
   /**
