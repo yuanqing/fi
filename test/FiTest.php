@@ -121,8 +121,9 @@ class FiTest extends PHPUnit_Framework_TestCase
   {
     $this->assertSame(count($this->documents), iterator_count($this->c));
     $count = 0;
-    $this->c->filter(function($document) use (&$count) {
-      if ($document->getField('title') === $this->documents[0]['fields']['title']) {
+    $excludedTitle = $this->documents[0]['fields']['title'];
+    $this->c->filter(function($document) use (&$count, $excludedTitle) {
+      if ($document->getField('title') === $excludedTitle) {
         return false;
       }
       $count++;
@@ -130,7 +131,7 @@ class FiTest extends PHPUnit_Framework_TestCase
     });
     $this->assertSame($count, iterator_count($this->c));
     foreach ($this->c as $document) {
-      $this->assertFalse($document->getField('title') === $this->documents[0]['fields']['title']);
+      $this->assertTrue($document->getField('title') !== $excludedTitle);
     }
   }
 
