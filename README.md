@@ -1,20 +1,20 @@
 # Fi.php [![Packagist Version](http://img.shields.io/packagist/v/yuanqing/fi.svg)](https://packagist.org/packages/yuanqing/fi) [![Build Status](https://img.shields.io/travis/yuanqing/fi.svg)](https://travis-ci.org/yuanqing/fi) [![Coverage Status](https://img.shields.io/coveralls/yuanqing/fi.svg)](https://coveralls.io/r/yuanqing/fi)
 
-Fi (rhymes with *pie*) lets you query and perform various operations (namely filter, map, and sort) on a collection of text files, as if the collection were a database.
+Fi (rhymes with *pie*) lets you query a collection of text files, as if the collection were a database.
 
 Fi is designed to be used as part of a [static site generator](http://staticsitegenerators.net/).
 
-## Quick Start
+## Usage
 
-Suppose our text files are organized into date-based folders like so:
+Suppose that our text files are organised into date-based directories like so:
 
 ```
 data/
-|
 `-- 2014/
     |-- 01/
     |   |-- 01-foo.md
     |   |-- 02-bar.md
+    |   |-- 03-baz.md
     |   `-- ...
     |-- 02/
     |   `-- ...
@@ -30,7 +30,7 @@ title: foo
 bar
 ```
 
-Using Fi, we can quickly grab data from the directory:
+With Fi, we can quickly grab data from our directory:
 
 ```php
 $dataDir = './data';
@@ -38,63 +38,86 @@ $filePathFormat = '{{ date.year: 4d }}/{{ date.month: 2d }}/{{ date.day: 2d }}-{
 $collection = Fi::query($dataDir, $filePathFormat); #=> Collection object
 ```
 
-The `$filePathFormat` is specified using a quasi-Regex syntax; see [Extract.php](https://github.com/yuanqing/extract).
+`$filePathFormat` is specified using a simple quasi-Regex syntax; see [Extract.php](https://github.com/yuanqing/extract).
 
-Each file that matches said `$filePathFormat` is a *Document*. A *Collection* is simply an [Iterator](http://php.net/manual/en/class.iterator.php) over a set of Document objects:
+### Document
+
+Every file that matches the `$filePathFormat` is a **Document**. A Document consists of:
+
+1. A file path
+2. Fields (ie. file path metadata + YAML front matter)
+3. Content
+
+It is the `$filePathFormat` that specifies the information that is to be extracted from the file path.
+
+### Collection
+
+A **Collection** is an [Iterator](http://php.net/manual/en/class.iterator.php) over a set of Documents:
 
 ```php
 foreach ($collection as $document) {
-  # ...
+  # ... do stuff with $document ...
 }
 ```
 
-We can also access a Document in the `$collection` by index:
+Alternatively, we can access a Document in a Collection by its index:
 
 ```php
 $document = $collection->getDocument(0); #=> Document object
-$document->getField('title'); #=> 'foo'
-$document->getContent(); #=> 'bar'
-$document->getField('date'); #=> ['year' => 2014, 'month' => 1, 'day' => ]
-$document->getContent(); #=> 'bar'
 ```
 
-We can also perform any number of map, filter, or sort operations over the Collection:
+### Map, filter, sort
+
+
+With Fi, we can easily perform any number of **map**, **filter**, or **sort** operations over the Collection:
 
 ```php
-# excludes Documents with the title 'foo'
-$filterCallback = function(Document $document) {
-  return $document->getField('title') !== 'foo';
-};
+# set date to a DateTime object
+$collection->map(function($document) {
+  $date = DateTime::createFromFormat('Y-m-d', implode('-', $document->getField('date')));
+  return $document->setField('date', $date);
+});
 
-# sets the title of all Documents to 'baz'
-$mapCallback = function(Document $document) {
-  $document->setField('title', 'baz');
-  return $document;
-};
+# sort by date in descending order
+$collection->sort(function($document1, $document2) {
+  return $document1->getField('date') < $document2->getField('date');
+});
 
-# sorts by Document content in ascending order
-$sortCallback = function(Document $document1, Document $document2) {
-  $content1 = $document1->getContent();
-  $content2 = $document2->getContent();
-  return strnatcasecmp($content1, $content2);
-};
-
-$collection
-  ->filter($filterCallback)
-  ->map($mapCallback)
-  ->sort($sortCallback)
-  ->toArr();
+# exclude Documents with date 2014-01-01
+$collection->filter(function($document) {
+  return $document->getField('date') != DateTime::createFromFormat('Y-m-d', '2014-01-01');
+});
 ```
 
-The `filter`, `map`, and `sort` methods all return the original Collection instance, allowing this manner of method chaining.
+### Cascading defaults
+
+Each Document's fields and content can inherit default values. Simply place a `_defaults.md` file in the same directory or in a parent directory of your text files.
+
+Suppose our `data` directory is as follows:
+```
+data/
+|-- _defaults.md
+`-- 2014/
+    |-- _defaults.md
+    |-- 01/
+    |   |-- _defaults.md
+    |   |-- 01-foo.md
+    |   |-- 02-bar.md
+    |   |-- 03-baz.md
+    |   `-- ...
+    |-- 02/
+    |   `-- ...
+    `-- ...
+```
+Default files further down the directory hierarchy will take precedence.
 
 ## API
 
 ### Fi
 
-#### Collection Fi::query ( string $dataDir, string $filePathFormat [, string $defaultsFileName ] )
+#### *Collection* Fi::query ( string $dataDir, string $filePathFormat [, string $defaultsFileName = '_defaults.md' ] )
 
-Factory method that makes a Collection object.
+Factory method to make a Collection object. `$defaultsFileName` is the name of the file that Fi will look for when resolving default values for a given Document.
 
 ```php
 $dataDir = './data';
@@ -102,44 +125,42 @@ $filePathFormat = '{{ year: 4d }}/{{ month: 2d }}/{{ date: 2d }}-{{ title: s }}.
 $collection = Fi::query($dataDir, $filePathFormat);
 ```
 
-The `$filePathFormat` is specified using a quasi-Regex syntax; see [Extract.php](https://github.com/yuanqing/extract).
-
 -
 
 ### Collection
 
-#### Collection filter ( callable $callback )
+#### *Collection* filter ( callable $callback )
 
 The `$callback` takes a single argument of type Document. Return `false` to * exclude* the Document from the Collection.
 
 ```php
 # excludes Documents with the title 'foo'
-$callback = function(Document $document) {
+$callback = function($document) {
   return $document->getField('title') !== 'foo';
 };
 $collection->filter($callback);
 ```
 
-#### Collection map ( callable $callback )
+#### *Collection* map ( callable $callback )
 
 Applies the `$callback` to each Document in the Collection. The `$callback` takes a single argument of type Document, and must return an object of type Document.
 
 ```php
 # sets the title of all Documents to 'foo'
-$callback = function(Document $document) {
+$callback = function($document) {
   $document->setField('title', 'bar');
   return $document;
 };
 $collection->map($callback);
 ```
 
-#### Collection sort ( callable $callback )
+#### *Collection* sort ( callable $callback )
 
 Sorts the Collection using the `$callback`, which takes two arguments of type Document. Return `1` if the first Document argument is to be ordered before the second, else return `-1`.
 
 ```php
 # sorts by Document content in ascending order
-$callback = function(Document $document1, Document $document2) {
+$callback = function($document1, $document2) {
   $content1 = $document1->getContent();
   $content2 = $document2->getContent();
   return strnatcasecmp($content1, $content2);
@@ -147,7 +168,7 @@ $callback = function(Document $document1, Document $document2) {
 $collection->sort($callback);
 ```
 
-#### Collection sort ( mixed $fieldName [, int $sortOrder = Fi::ASC ] )
+#### *Collection* sort ( mixed $fieldName [, int $sortOrder = Fi::ASC ] )
 
 Sorts the Collection by the field with `$fieldName` in the specified `$sortOrder`.
 
@@ -160,7 +181,7 @@ $collection->sort('title', Fi::ASC);
 $collection->sort('title', Fi::DESC);
 ```
 
-#### array toArr ( )
+#### *array* toArr ( )
 
 Gets all the Documents in the Collection as an array.
 
@@ -172,7 +193,7 @@ $collection->toArr(); #=> [ Document object, Document object, ... ]
 
 ### Document
 
-#### string getFilePath ( )
+#### *string* getFilePath ( )
 
 Gets the file path of the file (relative to the `$dataDir`) corresponding to the Document.
 
@@ -180,7 +201,7 @@ Gets the file path of the file (relative to the `$dataDir`) corresponding to the
 $document->getFilePath(); #=> 'data/2014/01/foo.md'
 ```
 
-#### array getFields ( )
+#### *array* getFields ( )
 
 Gets all the fields of the Document.
 
@@ -188,7 +209,7 @@ Gets all the fields of the Document.
 $document->getFields(); #=> ['year' => 2014, 'month' => 1, 'title' => 'foo']
 ```
 
-#### bool hasField ( mixed $fieldName )
+#### *bool* hasField ( mixed $fieldName )
 
 Checks if the Document has a field with the specified `$fieldName`.
 
@@ -196,7 +217,7 @@ Checks if the Document has a field with the specified `$fieldName`.
 $document->hasField('title'); #=> true
 ```
 
-#### mixed getField ( mixed $fieldName )
+#### *mixed* getField ( mixed $fieldName )
 
 Gets the field corresponding to the specified `$fieldName`.
 
@@ -204,7 +225,7 @@ Gets the field corresponding to the specified `$fieldName`.
 $document->getField('title'); #=> 'foo'
 ```
 
-#### Document setField ( mixed $fieldName, mixed $fieldValue )
+#### *Document* setField ( mixed $fieldName, mixed $fieldValue )
 
 Sets the field with `$fieldName` to the specified `$fieldValue`.
 
@@ -212,7 +233,7 @@ Sets the field with `$fieldName` to the specified `$fieldValue`.
 $document->setField('title', 'bar');
 ```
 
-#### bool hasContent ( )
+#### *bool* hasContent ( )
 
 Checks if the Document content is non-empty.
 
@@ -220,7 +241,7 @@ Checks if the Document content is non-empty.
 $document->hasContent(); #=> true
 ```
 
-#### string getContent ( )
+#### *string* getContent ( )
 
 Gets the Document content.
 
@@ -228,7 +249,7 @@ Gets the Document content.
 $document->getContent(); #=> 'foo'
 ```
 
-#### Document setContent ( string $content )
+#### *Document* setContent ( string $content )
 
 Sets the Document content to the specified `$content`.
 

@@ -134,9 +134,7 @@ class FileParser
     foreach ($dirNames as $dirName) {
       $currDirPath .= '/' . $dirName;
       $currDefaults = $this->parseFile($currDirPath . '/' . $this->defaultsFileName, true);
-      //var_dump($currDirPath . '/' . $this->defaultsFileName);
-      $defaults[0] = array_merge($defaults[0],
-        $currDefaults[0]); # $currDefaults override $defaults
+      $defaults[0] = array_merge($defaults[0], $currDefaults[0]); # $currDefaults override $defaults
       if ($currDefaults[1] !== '') {
         $defaults[1] = $currDefaults[1];
       }
