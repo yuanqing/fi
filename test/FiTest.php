@@ -10,32 +10,32 @@
 use yuanqing\Fi\Fi;
 use yuanqing\Fi\Document;
 
-class BaselineTest extends PHPUnit_Framework_TestCase
+class FiTest extends PHPUnit_Framework_TestCase
 {
   protected function setUp()
   {
-    $this->dataDir = 'test/fixtures/BaselineTest';
-    $this->format = '{{ order: d }}-{{ title: s }}.md';
+    $this->dataDir = 'test/fixtures';
+    $this->format = 'foo/bar/{{ order: d }} - {{ title: s }}.md';
+    $this->c = Fi::query($this->dataDir, $this->format);
     $this->documents = array(
       array(
-        'filePath' => $this->dataDir . '/01-foo.md',
-        'fields' => array('order' => 1, 'title' => 'foo'),
-        'content' => 'foo'
+        'filePath' => $this->dataDir . '/foo/bar/0 - foo.md',
+        'fields' => array('order' => 3, 'title' => 'foo title', 'tag' => 'default tag'),
+        'content' => 'foo content'
       ),
       array(
-        'filePath' => $this->dataDir . '/02-bar.md',
-        'fields' => array('order' => 2, 'title' => 'bar'),
-        'content' => 'bar'
+        'filePath' => $this->dataDir . '/foo/bar/1 - bar.md',
+        'fields' => array('order' => 1, 'title' => 'bar', 'tag' => 'bar tag'),
+        'content' => 'default content 2'
       ),
       array(
-        'filePath' => $this->dataDir . '/03-baz.md',
-        'fields' => array('order' => 3, 'title' => 'baz'),
-        'content' => 'baz'
+        'filePath' => $this->dataDir . '/foo/bar/2 - baz.md',
+        'fields' => array('order' => 2, 'title' => 'baz', 'tag' => 'default tag'),
+        'content' => 'baz content'
       )
     );
     $this->orderAscending = array(1, 2, 3);
-    $this->titleAscending = array('bar', 'baz', 'foo');
-    $this->c = Fi::query($this->dataDir, $this->format);
+    $this->titleAscending = array('bar', 'baz', 'foo title');
   }
 
   /**
@@ -200,7 +200,7 @@ class BaselineTest extends PHPUnit_Framework_TestCase
   private function assertDocumentEquals(array $expected, Document $actual)
   {
     $this->assertSame($expected['filePath'], $actual->getFilePath());
-    $this->assertSame($expected['fields'], $actual->getFields());
+    $this->assertTrue($expected['fields'] == $actual->getFields());
     foreach ($actual->getFields() as $fieldName => $fieldVal) {
       $this->assertSame(isset($expected['fields'][$fieldName]), $actual->hasField($fieldName));
       $this->assertSame($expected['fields'][$fieldName], $actual->getField($fieldName));

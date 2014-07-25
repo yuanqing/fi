@@ -124,7 +124,7 @@ class FileParser
     # get the directory names in the path from {$dataDir} to $filePath.
     # if $filePath = '/foo/bar/baz/qux/quux.md' and $this->dataDir = '/foo/bar',
     # then $dirNames = ['baz', 'qux']
-    $dirNames = explode('/', dirname(ltrim($filePath, $this->dataDir)));
+    $dirNames = explode('/', dirname(substr($filePath, strlen($this->dataDir))));
 
     # parse the defaults file in {$dataDir}
     $currDirPath = $this->dataDir;
@@ -133,9 +133,10 @@ class FileParser
     # parse and cascade defaults on the path from {$dataDir} to $filePath
     foreach ($dirNames as $dirName) {
       $currDirPath .= '/' . $dirName;
-      # $currDefaults override $defaults
       $currDefaults = $this->parseFile($currDirPath . '/' . $this->defaultsFileName, true);
-      $defaults[0] = array_merge($defaults[0], $currDefaults[0]);
+      //var_dump($currDirPath . '/' . $this->defaultsFileName);
+      $defaults[0] = array_merge($defaults[0],
+        $currDefaults[0]); # $currDefaults override $defaults
       if ($currDefaults[1] !== '') {
         $defaults[1] = $currDefaults[1];
       }
