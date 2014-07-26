@@ -1,4 +1,5 @@
 ---
-title: bar
+title: bar title
+category: bar category
 ---
-bar
+bar content

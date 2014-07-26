@@ -1,4 +1,4 @@
 ---
-title: foo
+title: foo title
 ---
-foo
+foo content
