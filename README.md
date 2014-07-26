@@ -264,7 +264,7 @@ Fi requires at least **PHP 5.3** or **HHVM**, and [Composer](http://getcomposer.
 2. Install [the Composer package](https://packagist.org/packages/yuanqing/fi):
 
     ```
-    $ composer require yuanqing/fi ~0.1
+    $ composer require yuanqing/fi ~0.2
     ```
 
 3. In your PHP file, require the Composer autoloader:
